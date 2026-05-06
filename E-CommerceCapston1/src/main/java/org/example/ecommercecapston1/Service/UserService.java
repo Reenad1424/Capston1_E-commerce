@@ -56,7 +56,7 @@ public class UserService {
         return false;
     }
 
-    public int buyProduct(String userId, String productId, String merchantId,
+   public int buyProduct(String userId, String productId, String merchantId,
                           ProductService productService,
                           MerchantStockService merchantStockService) {
 
@@ -95,6 +95,10 @@ public class UserService {
         currentUser.setBalance(currentUser.getBalance() - currentProduct.getPrice());
         currentUser.setTotalSpent(currentUser.getTotalSpent() + currentProduct.getPrice());
         currentStock.setStock(currentStock.getStock() - 1);
+        if (currentUser.getPurchasedProductsIDs() == null) {
+            currentUser.setPurchasedProductsIDs(new ArrayList<>());
+        }
+        currentUser.getPurchasedProductsIDs().add(productId);
 
         if(currentUser.getTotalSpent() >= 5000) {
             currentUser.setVip(true);
@@ -129,7 +133,23 @@ public class UserService {
         }
         if (user == null) return -1; // User not found
 
-        // Step 2: Search for the product to verify existence and get its price
+        //Initialize purchasedProductsIDs if it is null
+        if (user.getPurchasedProductsIDs() == null) {
+            user.setPurchasedProductsIDs(new ArrayList<>());
+        }
+
+        // Step 2: Check if the user actually purchased this product before
+        boolean hasBought = false;
+        for (int i = 0; i < user.getPurchasedProductsIDs().size(); i++) {
+            if (user.getPurchasedProductsIDs().get(i).equalsIgnoreCase(productId)) {
+                hasBought = true;
+                user.getPurchasedProductsIDs().remove(i); // Remove one instance from purchase history
+                break;
+            }
+        }
+        if (!hasBought) return -5; // Error: Product was not purchased by this user
+
+        // Step 3: Search for the product to verify existence and get its price
         Product product = null;
         for (int i = 0; i < productService.get().size(); i++) {
             if (productService.get().get(i).getId().equalsIgnoreCase(productId)) {
@@ -139,10 +159,10 @@ public class UserService {
         }
         if (product == null) return -2; // Product not found
 
-        // Step 3: Cannot return a price higher than the user's total spent
+        // Step 4: System Protection (Cannot return a price higher than the user's total spent)
         if (user.getTotalSpent() < product.getPrice()) return -3;
 
-        // Step 4: Search for the merchant's stock record to return the item
+        // Step 5: Search for the merchant's stock record to return the item
         for (int i = 0; i < merchantStockService.get().size(); i++) {
             MerchantStock stock = merchantStockService.get().get(i);
             if (stock.getMerchantId().equalsIgnoreCase(merchantId) && stock.getProductId().equalsIgnoreCase(productId)) {
@@ -152,8 +172,8 @@ public class UserService {
                 user.setTotalSpent(user.getTotalSpent() - product.getPrice());
                 stock.setStock(stock.getStock() + 1);
 
-                //  Revoke VIP status if total spent falls below the threshold (5000)
-                if(user.getTotalSpent() < 5000) {
+                // Revoke VIP status if total spent falls below the threshold (5000)
+                if (user.getTotalSpent() < 5000) {
                     user.setVip(false);
                 }
 
@@ -163,7 +183,6 @@ public class UserService {
 
         return -4; // Merchant stock record for this product not found
     }
-
 
 
     //VIP & Coupon
