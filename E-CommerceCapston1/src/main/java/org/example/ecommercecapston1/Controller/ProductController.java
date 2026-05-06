@@ -64,13 +64,21 @@ public class ProductController {
     }
 
     //Extra
-    //Add review for specific product
-    @PutMapping("/review/{productId}/{review}")
-    public ResponseEntity<?> addReview(@PathVariable String productId, @PathVariable String review) {
-        if (productService.addReview(productId, review)) {
-            return ResponseEntity.status(200).body(new ApiResponse("Review added successfully"));
-        }
-        return ResponseEntity.status(400).body(new ApiResponse("Product not found"));
+    // Endpoint to add a review after verifying the purchase
+    @PutMapping("/add-review/{userId}/{productId}/{review}")
+    public ResponseEntity<?> addReview(@PathVariable String userId,
+                                       @PathVariable String productId,
+                                       @PathVariable String review) {
+
+        int result = productService.addReview(userId, productId, review, userService);
+
+        return switch (result) {
+            case 1 -> ResponseEntity.status(200).body(new ApiResponse("Review added successfully"));
+            case -1 -> ResponseEntity.status(400).body(new ApiResponse("User not found"));
+            case -2 -> ResponseEntity.status(400).body(new ApiResponse("You can only review products you have actually purchased!"));
+            case -3 -> ResponseEntity.status(400).body(new ApiResponse("Product not found"));
+            default -> ResponseEntity.status(400).body(new ApiResponse("An error occurred"));
+        };
     }
 
     //Get Products By category Name
@@ -86,21 +94,20 @@ public class ProductController {
     }
 
     // Get products sorted by price (cheapest or expensive)
-    @GetMapping("/get-sorted/{categoryName}/{sortType}")
-    public ResponseEntity<?> getSorted(@PathVariable String categoryName, @PathVariable String sortType) {
-
-        if (!sortType.equalsIgnoreCase("cheapest") && !sortType.equalsIgnoreCase("expensive")) {
-            return ResponseEntity.status(400).body(new ApiResponse("Invalid sort type! Please use 'cheapest' or 'expensive'"));
-        }
-
-        ArrayList<Product> sortedList = productService.getProductsSortedByPrice(categoryName, sortType);
-
-        if (sortedList == null) {
-            return ResponseEntity.status(400).body(new ApiResponse("No products found for this category"));
-        }
-
-        return ResponseEntity.status(200).body(sortedList);
+    // Endpoint for cheapest products
+    @GetMapping("/cheapest/{categoryName}")
+    public ResponseEntity<?> getCheapest(@PathVariable String categoryName) {
+        ArrayList<Product> list = productService.getCheapestProducts(categoryName);
+        if (list == null) return ResponseEntity.status(400).body(new ApiResponse("No products found"));
+        return ResponseEntity.status(200).body(list);
     }
 
+    // Endpoint for most expensive products
+    @GetMapping("/expensive/{categoryName}")
+    public ResponseEntity<?> getExpensive(@PathVariable String categoryName) {
+        ArrayList<Product> list = productService.getMostExpensiveProducts(categoryName);
+        if (list == null) return ResponseEntity.status(400).body(new ApiResponse("No products found"));
+        return ResponseEntity.status(200).body(list);
+    }
 
 }
