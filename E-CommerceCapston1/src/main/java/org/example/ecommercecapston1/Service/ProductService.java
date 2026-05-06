@@ -1,6 +1,8 @@
 package org.example.ecommercecapston1.Service;
 import org.example.ecommercecapston1.Model.Product;
 import org.springframework.stereotype.Service;
+import org.example.ecommercecapston1.Model.User;
+
 import java.util.ArrayList;
 
 @Service
