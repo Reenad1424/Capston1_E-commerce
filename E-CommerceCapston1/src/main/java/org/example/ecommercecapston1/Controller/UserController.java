@@ -62,7 +62,7 @@ public class UserController {
         }
 
        @PutMapping("/buy/{userId}/{productId}/{merchantId}")
-       public ResponseEntity<?> buyProduct(@PathVariable String userId,
+    public ResponseEntity<?> buyProduct(@PathVariable String userId,
                                         @PathVariable String productId,
                                         @PathVariable String merchantId) {
 
@@ -78,17 +78,19 @@ public class UserController {
             default -> ResponseEntity.status(400).body(new ApiResponse("An error occurred"));
         };
     }
-    //Extra
-    // Return Product
+
+    // Extra: Return Product
     @PutMapping("/return/{userId}/{productId}/{merchantId}")
     public ResponseEntity<?> returnProduct(@PathVariable String userId, @PathVariable String productId, @PathVariable String merchantId) {
         int result = userService.returnProduct(userId, productId, merchantId, productService, merchantStockService);
+
         return switch (result) {
             case 1 -> ResponseEntity.status(200).body(new ApiResponse("Product returned successfully"));
             case -1 -> ResponseEntity.status(400).body(new ApiResponse("User not found"));
             case -2 -> ResponseEntity.status(400).body(new ApiResponse("Product not found"));
             case -3 -> ResponseEntity.status(400).body(new ApiResponse("Invalid return: amount exceeds total spent"));
             case -4 -> ResponseEntity.status(400).body(new ApiResponse("Merchant stock record not found"));
+            case -5 -> ResponseEntity.status(400).body(new ApiResponse("You cannot return a product you haven't purchased!"));
             default -> ResponseEntity.status(400).body(new ApiResponse("Error occurred"));
         };
     }
