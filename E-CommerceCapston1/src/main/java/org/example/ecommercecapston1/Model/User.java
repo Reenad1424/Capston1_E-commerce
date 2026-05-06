@@ -3,6 +3,8 @@ package org.example.ecommercecapston1.Model;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import java.util.ArrayList;
+
 
 @Data
 @AllArgsConstructor
@@ -34,6 +36,8 @@ public class User {
     //Extra
     @NotNull(message = "Total spent cannot be empty")
     private double totalSpent;
+
+    private ArrayList<String> purchasedProductsIDs = new ArrayList<>();
 
     private boolean isVip;
 }
