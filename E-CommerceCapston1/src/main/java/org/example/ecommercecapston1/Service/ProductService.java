@@ -70,21 +70,43 @@ public class ProductService {
     }
 
     //Extra
-    //Add Review
-    public boolean addReview(String productId, String review) {
-        //search for product
+    // Method to add a review only if the user has purchased the product
+    public int addReview(String userId, String productId, String review, UserService userService) {
+        // Step 1: Search for the user in the system
+        User currentUser = null;
+        for (int i = 0; i < userService.get().size(); i++) {
+            if (userService.get().get(i).getId().equalsIgnoreCase(userId)) {
+                currentUser = userService.get().get(i);
+                break;
+            }
+        }
+        if (currentUser == null) return -1; // User not found
+
+        if (currentUser.getPurchasedProductsIDs() == null) {
+            currentUser.setPurchasedProductsIDs(new ArrayList<>());
+        }
+
+        // Step 2: Check if the user has actually purchased this product
+        boolean hasPurchased = false;
+        for (int i = 0; i < currentUser.getPurchasedProductsIDs().size(); i++) {
+            if (currentUser.getPurchasedProductsIDs().get(i).equalsIgnoreCase(productId)) {
+                hasPurchased = true;
+                break;
+            }
+        }
+        if (!hasPurchased) return -2; // User has not purchased this product
+
+        // Step 3: Find the product and add the review
         for (int i = 0; i < products.size(); i++) {
             if (products.get(i).getId().equalsIgnoreCase(productId)) {
-
-                // if the Review list not initialize we will initialize here
                 if (products.get(i).getReviews() == null) {
                     products.get(i).setReviews(new ArrayList<>());
                 }
                 products.get(i).getReviews().add(review);
-                return true;
+                return 1; // Success
             }
         }
-        return false;
+        return -3; // Product not found
     }
 
     //Get by Category Name
@@ -115,22 +137,20 @@ public class ProductService {
 
 
     //Sort by Price
-    // Method to sort products by price based on user preference (cheapest first or most expensive first)
-    public ArrayList<Product> getProductsSortedByPrice(String categoryName, String sortType) {
+    // Method to get products from cheapest to most expensive
+    public ArrayList<Product> getCheapestProducts(String categoryName) {
         String foundCategoryId = null;
 
-        // Step 1: Search for the Category ID using the Category Name provided
+        // Step 1: Find Category ID by Name
         for (int i = 0; i < categoryService.get().size(); i++) {
             if (categoryService.get().get(i).getName().equalsIgnoreCase(categoryName)) {
                 foundCategoryId = categoryService.get().get(i).getId();
-                break; // Category found, exit the loop
+                break;
             }
         }
-
-        // If no category matches the provided name, return null
         if (foundCategoryId == null) return null;
 
-        // Step 2: Extract all products that belong to this Category ID
+        // Step 2: Filter products
         ArrayList<Product> filteredProducts = new ArrayList<>();
         for (int i = 0; i < products.size(); i++) {
             if (products.get(i).getCategoryId().equalsIgnoreCase(foundCategoryId)) {
@@ -138,40 +158,58 @@ public class ProductService {
             }
         }
 
-        // Step 3: Perform Bubble Sort based on the user's sorting choice
+        if (filteredProducts.isEmpty()) return null;
+
+        // Step 3: Bubble Sort (Low to High)
         int n = filteredProducts.size();
         for (int i = 0; i < n - 1; i++) {
             for (int j = 0; j < n - i - 1; j++) {
-                boolean shouldSwap = false;
-
-                // Logic for "cheapest": Sort from Low to High price
-                if (sortType.equalsIgnoreCase("cheapest")) {
-                    if (filteredProducts.get(j).getPrice() > filteredProducts.get(j + 1).getPrice()) {
-                        shouldSwap = true;
-                    }
-                }
-                // Logic for "expensive": Sort from High to Low price
-                else if (sortType.equalsIgnoreCase("expensive")) {
-                    if (filteredProducts.get(j).getPrice() < filteredProducts.get(j + 1).getPrice()) {
-                        shouldSwap = true;
-                    }
-                }
-
-                // If the condition is met, swap the products in the list
-                if (shouldSwap) {
+                if (filteredProducts.get(j).getPrice() > filteredProducts.get(j + 1).getPrice()) {
                     Product temp = filteredProducts.get(j);
                     filteredProducts.set(j, filteredProducts.get(j + 1));
                     filteredProducts.set(j + 1, temp);
                 }
             }
         }
-
-        // If no products were found in this category, return null; otherwise, return the sorted list
-        if (filteredProducts.isEmpty()) return null;
-
         return filteredProducts;
     }
 
+    // Method to get products from most expensive to cheapest
+    public ArrayList<Product> getMostExpensiveProducts(String categoryName) {
+        String foundCategoryId = null;
+
+        // Step 1: Find Category ID by Name
+        for (int i = 0; i < categoryService.get().size(); i++) {
+            if (categoryService.get().get(i).getName().equalsIgnoreCase(categoryName)) {
+                foundCategoryId = categoryService.get().get(i).getId();
+                break;
+            }
+        }
+        if (foundCategoryId == null) return null;
+
+        // Step 2: Filter products
+        ArrayList<Product> filteredProducts = new ArrayList<>();
+        for (int i = 0; i < products.size(); i++) {
+            if (products.get(i).getCategoryId().equalsIgnoreCase(foundCategoryId)) {
+                filteredProducts.add(products.get(i));
+            }
+        }
+
+        if (filteredProducts.isEmpty()) return null;
+
+        // Step 3: Bubble Sort (High to Low)
+        int n = filteredProducts.size();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (filteredProducts.get(j).getPrice() < filteredProducts.get(j + 1).getPrice()) {
+                    Product temp = filteredProducts.get(j);
+                    filteredProducts.set(j, filteredProducts.get(j + 1));
+                    filteredProducts.set(j + 1, temp);
+                }
+            }
+        }
+        return filteredProducts;
+    }
 
 
 }
