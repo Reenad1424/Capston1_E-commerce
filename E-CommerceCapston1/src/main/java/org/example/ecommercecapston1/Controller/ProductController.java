@@ -18,6 +18,8 @@ public class ProductController {
 
 
     private final ProductService productService;
+    private final UserService userService;
+
 
     @GetMapping("/get")
     public ResponseEntity<?> get() {
